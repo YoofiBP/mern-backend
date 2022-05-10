@@ -1,5 +1,6 @@
 import UserModel from "../models/user.model";
 import dbErrorHandler from "../helpers/dbErrorHandler";
+import mongoose from 'mongoose';
 
 const index = async (req, res) => {
     try {
@@ -21,6 +22,9 @@ const store = async (req, res) => {
             message: 'User saved successfully'
         })
     } catch (e) {
+        if (e instanceof mongoose.Error.ValidationError) {
+            return res.status(422).json(dbErrorHandler.getErrorMessage(e))
+        }
         return res.status(400).json(dbErrorHandler.getErrorMessage(e))
     }
 };
@@ -55,10 +59,15 @@ const update = async (req, res) => {
                 updatedUser[field] = req.body[field];
             }
         })
+        if (req.file) {
+            updatedUser.image.data = req.file.buffer;
+            updatedUser.image.contentType = req.file.mimetype
+        }
         await updatedUser.save();
         return res.status(200).json(updatedUser);
     } catch (e) {
-        res.status(500).json({
+        console.error(e)
+        res.status(400).json({
             error: "Cannot update user"
         })
     }

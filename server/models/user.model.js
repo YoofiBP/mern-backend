@@ -20,6 +20,14 @@ const userSchema = new Schema({
                 message: 'Please fill a valid email address'
             }
         },
+        about: {
+            type: String,
+            trim: true
+        },
+        image: {
+            data: Buffer,
+            contentType: String
+        },
         hashed_password: {
             type: String,
             required: [true, 'Password is required'],
