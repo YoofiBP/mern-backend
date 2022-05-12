@@ -7,7 +7,6 @@ import cors from "cors";
 import userRouter from "./routes/user.routes";
 import authRouter from "./routes/auth.routes";
 import errorController from './controllers/error.controller';
-import React from 'react';
 
 const app = express();
 
