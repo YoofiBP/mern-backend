@@ -12,8 +12,10 @@ userRouter.route('/api/users')
 
 userRouter.route('/api/users/:userId')
     .get(authController.requireSignIn, userController.show)
-    .put(authController.requireSignIn, authController.hasAuthorization, upload.single('picture'), userController.update)
-    .delete(authController.requireSignIn, authController.hasAuthorization, userController.remove)
+    .put(userController.update)
+    .delete(userController.remove)
+// .put(authController.requireSignIn, authController.hasAuthorization, upload.single('picture'), userController.update)
+// .delete(authController.requireSignIn, authController.hasAuthorization, userController.remove)
 
 userRouter.param('userId', userController.userById);
 

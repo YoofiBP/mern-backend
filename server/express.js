@@ -7,6 +7,7 @@ import cors from "cors";
 import userRouter from "./routes/user.routes";
 import authRouter from "./routes/auth.routes";
 import errorController from './controllers/error.controller';
+import authController from './controllers/auth.controller';
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(compress());
 app.use(cors());
 
 
+app.use(authController.checkBlackList)
 app.use('/', authRouter);
 app.use(userRouter);
 

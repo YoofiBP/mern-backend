@@ -30,4 +30,17 @@ const getErrorMessage = (err) => {
     return message;
 }
 
+export class ValidationError extends Error {
+    constructor(errors) {
+        super();
+        this.errors = errors;
+    }
+}
+
+export class AuthenticationError extends Error {
+    constructor() {
+        super('Authentication Failed');
+    }
+}
+
 export default {getErrorMessage}

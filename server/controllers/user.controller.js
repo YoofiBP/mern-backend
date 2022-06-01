@@ -1,6 +1,5 @@
-import UserModel from "../models/user.model";
-import dbErrorHandler from "../helpers/dbErrorHandler";
-import mongoose from 'mongoose';
+import {ValidationError} from "../helpers/dbErrorHandler";
+import UserModel from '../models/user.model';
 
 const index = async (req, res) => {
     try {
@@ -12,20 +11,19 @@ const index = async (req, res) => {
     }
 };
 
-const store = async (req, res) => {
+const store = async (req, res, next) => {
     const {name, email, password} = req.body;
     const userData = {name, email, password};
     try {
-        const user = new UserModel(userData);
-        await user.save();
+        await UserModel.signUp(userData);
         return res.status(200).json({
             message: 'User saved successfully'
         })
     } catch (e) {
-        if (e instanceof mongoose.Error.ValidationError) {
-            return res.status(422).json(dbErrorHandler.getErrorMessage(e))
+        if (e instanceof ValidationError) {
+            return res.status(422).json(e.errors)
         }
-        return res.status(400).json(dbErrorHandler.getErrorMessage(e))
+        next(e);
     }
 };
 const show = async (req, res) => {
@@ -40,11 +38,12 @@ const show = async (req, res) => {
 };
 const remove = async (req, res) => {
     try {
-        await UserModel.findByIdAndRemove(req.user._id);
+        await UserModel.deleteUserById(req.user.id);
         return res.status(200).json({
             message: "User removed successfully"
         });
     } catch (e) {
+        console.error(e)
         res.status(500).json({
             error: "Deletion failed"
         })
@@ -52,7 +51,7 @@ const remove = async (req, res) => {
 };
 const update = async (req, res) => {
     try {
-        const allowedUpdateFields = ["name", "email", "password"];
+        /*const allowedUpdateFields = ["name", "email", "password"];
         const updatedUser = req.user;
         allowedUpdateFields.forEach((field) => {
             if (req.body[field]) {
@@ -63,7 +62,8 @@ const update = async (req, res) => {
             updatedUser.image.data = req.file.buffer;
             updatedUser.image.contentType = req.file.mimetype
         }
-        await updatedUser.save();
+        await updatedUser.save();*/
+        const updatedUser = await UserModel.updateUser(req.user.id, req.body)
         return res.status(200).json(updatedUser);
     } catch (e) {
         console.error(e)
@@ -75,7 +75,7 @@ const update = async (req, res) => {
 
 const userById = async (req, res, next, id) => {
     try {
-        const user = await UserModel.findById(id);
+        const user = await UserModel.getUser(id);
         if (!user) {
             return res.status(400).send({
                 error: 'User not found'
@@ -84,6 +84,7 @@ const userById = async (req, res, next, id) => {
         req.user = user;
         next();
     } catch (e) {
+        console.log(e)
         res.status(400).send({
             'error': "Could not retrieve user"
         })

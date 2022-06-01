@@ -1,11 +1,5 @@
 import app from "./express";
 import config from './config/config'
-import prisma from "./prisma/prisma";
-
-prisma.$connect().then(async () => {
-    console.log('Database connected successfully')
-});
-
 
 // devBundle.compile(app);
 /*mongoose.connect(config.mongoUri);

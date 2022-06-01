@@ -1,85 +1,161 @@
-import mongoose from "mongoose";
-import validator from 'validator';
 import crypto from 'crypto';
+import isEmail from 'validator/lib/isEmail';
+import contains from 'validator/lib/contains';
+import prisma from '../prisma/prisma';
+import {AuthenticationError, ValidationError} from "../helpers/dbErrorHandler";
 
-const {Schema} = mongoose;
+const excludeFields = (user) => {
+    const protectedFields = ['password', 'salt'];
 
-const userSchema = new Schema({
-        name: {
-            type: String,
-            trim: true,
-            required: [true, 'Name is required']
-        },
-        email: {
-            type: String,
-            trim: true,
-            unique: true,
-            required: [true, 'Email is required'],
-            validate: {
-                validator: (emailValue) => validator.isEmail(emailValue),
-                message: 'Please fill a valid email address'
-            }
-        },
-        about: {
-            type: String,
-            trim: true
-        },
-        image: {
-            data: Buffer,
-            contentType: String
-        },
-        hashed_password: {
-            type: String,
-            required: [true, 'Password is required'],
-            validate: {
-                validator: function () {
-                    if (this._password?.length < 6) {
-                        this.invalidate('password', 'Password must be at least 6 characters long');
-                    }
-                    if (this.isNew && !this._password) {
-                        this.invalidate('password', 'Password is required');
-                    }
-                }
-            }
-        },
-        salt: {type: String}
-    },
-    {timestamps: true});
+    for (let field of protectedFields) {
+        delete user[field];
+    }
 
-userSchema.methods = {
-    authenticate: function (plainTextPassword) {
-        return this.encryptPassword(plainTextPassword) === this.hashed_password
-    },
-    makeSalt: () => String(Math.round((new Date().valueOf() * Math.random()))),
-    encryptPassword: function (password) {
-        if (!password) return '';
-        try {
-            return crypto.createHmac('sha1', this.salt).update(password).digest('hex')
-        } catch (err) {
-            console.error(err);
-            return '';
+    return user;
+}
+
+const encryptPassword = (password, salt) => {
+    try {
+        return crypto.createHmac('sha1', salt).update(password).digest('hex');
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+const authenticate = async ({email, password}) => {
+    const user = await prisma.user.findUnique({
+        where: {
+            email
+        }
+    })
+
+    if (!user) {
+        throw new AuthenticationError()
+    }
+
+    if (encryptPassword(password, user.salt) !== user.password) {
+        throw new AuthenticationError()
+    }
+
+    return excludeFields(user);
+}
+
+const makeSalt = () => String(Math.round((new Date().valueOf() * Math.random())))
+
+const emailIsValid = (email) => {
+    return isEmail(email)
+}
+
+const nameIsValid = (name) => {
+    return name.length > 1
+}
+
+const passwordIsValid = (password) => {
+    const errors = [];
+    if (!password) {
+        errors.push('Password is required')
+    }
+    if (password?.length < 8) {
+        errors.push('Password must be at least 8 characters')
+    }
+    if (password && contains(password, 'password')) {
+        errors.push('Password should not contain the word password')
+    }
+
+    if (errors.length > 0) {
+        return {
+            isValid: false,
+            messages: errors.join(',')
+        }
+    } else {
+        return {
+            isValid: true
         }
     }
 }
 
-userSchema
-    .virtual('password')
-    .set(function (passwordValue) {
-        this._password = passwordValue;
-        this.salt = this.makeSalt();
-        this.hashed_password = this.encryptPassword(passwordValue);
-    }).get(function () {
-    return this._password;
-})
+const signUp = (prisma) => async ({email, password, name}) => {
+    const errors = {};
 
-userSchema.set('toJSON', {
-    transform: function (doc, obj) {
-        delete obj.hashed_password;
-        delete obj.salt;
-        return obj
+    if (!nameIsValid(name)) {
+        errors.name = 'User name too short'
     }
-})
 
-const UserModel = mongoose.model('User', userSchema);
+    if (!emailIsValid(email)) {
+        errors.email = 'Invalid email'
+    }
+
+    const passwordValid = passwordIsValid(password)
+
+    if (!passwordValid.isValid) {
+        errors.password = passwordValid.message
+    }
+
+    if (Object.keys(errors).length > 0) {
+        throw new ValidationError(errors);
+    }
+
+    const salt = makeSalt();
+
+    const hashed_password = encryptPassword(password, salt);
+
+    return await prisma.create({
+        data: {
+            name,
+            email,
+            password: hashed_password,
+            salt,
+        }
+    })
+}
+
+const getUser = (prisma) => async (id) => {
+    const user = await prisma.findUnique({
+        where: {
+            id
+        }
+    })
+
+    excludeFields(user);
+}
+
+const deleteUserById = (prisma) => async (id) => {
+    return prisma.delete({
+        where: {
+            id
+        }
+    })
+}
+
+const updateUser = (prisma) => async (id, updateData) => {
+    const allowedUpdateFields = ["name", "email", "password", "about"];
+    Object.keys(updateData).forEach(userField => {
+        if (!allowedUpdateFields.includes(userField) || !updateData[userField]) {
+            delete updateData[userField];
+        }
+    })
+
+    return prisma.update({
+        where: {
+            id
+        },
+        data: {
+            ...updateData
+        }
+    })
+}
+
+function Users(prisma) {
+    return Object.assign(prisma, {
+        authenticate,
+        signUp: signUp(prisma),
+        getUser: getUser(prisma),
+        deleteUserById: deleteUserById(prisma),
+        updateUser: updateUser(prisma)
+    })
+}
+
+
+const UserModel = Users(prisma.user);
 
 export default UserModel;

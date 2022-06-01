@@ -19,7 +19,7 @@ model User {
   v               Int         @map("__v") @default(0)
   createdAt       DateTime    @default(now()) @db.Date
   email           String      @unique
-  password String      @map("hashed_password")
+  password        String
   image           UsersImage?
   name            String
   salt            String

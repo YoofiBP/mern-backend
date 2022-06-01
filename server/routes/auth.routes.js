@@ -4,6 +4,6 @@ const authRouter = require('express').Router();
 
 authRouter.post('/auth/signin', authController.signIn);
 
-authRouter.get('/auth/signout', authController.signOut)
+authRouter.get('/auth/signout', authController.requireSignIn, authController.signOut)
 
 export default authRouter;
