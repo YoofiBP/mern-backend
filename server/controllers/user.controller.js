@@ -51,19 +51,7 @@ const remove = async (req, res) => {
 };
 const update = async (req, res) => {
     try {
-        /*const allowedUpdateFields = ["name", "email", "password"];
-        const updatedUser = req.user;
-        allowedUpdateFields.forEach((field) => {
-            if (req.body[field]) {
-                updatedUser[field] = req.body[field];
-            }
-        })
-        if (req.file) {
-            updatedUser.image.data = req.file.buffer;
-            updatedUser.image.contentType = req.file.mimetype
-        }
-        await updatedUser.save();*/
-        const updatedUser = await UserModel.updateUser(req.user.id, req.body)
+        const updatedUser = await UserModel.updateUser(req.user.id, req.body, req.file);
         return res.status(200).json(updatedUser);
     } catch (e) {
         console.error(e)

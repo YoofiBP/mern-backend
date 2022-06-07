@@ -85,6 +85,18 @@ const signUp = (prisma) => async ({email, password, name}) => {
         errors.email = 'Invalid email'
     }
 
+    const existingUser = await prisma.findUnique({
+        where: {
+            email
+        }
+    })
+
+    if (existingUser !== null) {
+        throw new ValidationError({
+            error: "User already exists"
+        })
+    }
+
     const passwordValid = passwordIsValid(password)
 
     if (!passwordValid.isValid) {
@@ -116,7 +128,7 @@ const getUser = (prisma) => async (id) => {
         }
     })
 
-    excludeFields(user);
+    return excludeFields(user);
 }
 
 const deleteUserById = (prisma) => async (id) => {
@@ -127,13 +139,20 @@ const deleteUserById = (prisma) => async (id) => {
     })
 }
 
-const updateUser = (prisma) => async (id, updateData) => {
+const updateUser = (prisma) => async (id, updateData, imageFile) => {
     const allowedUpdateFields = ["name", "email", "password", "about"];
     Object.keys(updateData).forEach(userField => {
         if (!allowedUpdateFields.includes(userField) || !updateData[userField]) {
             delete updateData[userField];
         }
     })
+
+    if (imageFile) {
+        updateData.image = {
+            contentType: imageFile.mimetype,
+            data: imageFile.buffer
+        }
+    }
 
     return prisma.update({
         where: {
