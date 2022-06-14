@@ -4,7 +4,9 @@ const handleError = async (err, req, res, _) => {
             error: "Unauthorized"
         });
     }
-    return res.status(500).send()
+    return res.status(500).send({
+        error: "Something went wrong"
+    })
 }
 
 export default {handleError}

@@ -1,9 +1,12 @@
 import {ValidationError} from "../helpers/dbErrorHandler";
 import UserModel from '../models/user.model';
+import {FollowPayload} from "../helpers/schemas/user.schema";
+import {ZodError} from "zod";
+import dbErrorHandler from "../helpers/dbErrorHandler";
 
 const index = async (req, res) => {
     try {
-        const users = await UserModel.find();
+        const users = await UserModel.findMany();
         res.status(200).json(users)
     } catch (err) {
         console.error(err);
@@ -61,6 +64,21 @@ const update = async (req, res) => {
     }
 };
 
+const userPhoto = async (req, res) => {
+    try {
+        const user = req.user;
+        if (user.image.data) {
+            res.set('Content-Type', user.image.contentType);
+            res.send(user.image.data)
+        }
+    } catch (e) {
+        res.status(400).json({
+            'error': "Something went wrong"
+        })
+    }
+
+}
+
 const userById = async (req, res, next, id) => {
     try {
         const user = await UserModel.getUser(id);
@@ -79,11 +97,66 @@ const userById = async (req, res, next, id) => {
     }
 };
 
+const addFollowing = async (req, res, next) => {
+    try {
+        const {followerID, followingID} = FollowPayload.parse(req.body);
+        await UserModel.addFollowing({
+            followerID, followingID
+        })
+        return next();
+    } catch (e) {
+        if (e instanceof ZodError) {
+            return res.status(422).send({
+                error: dbErrorHandler.processZodError(e)
+            })
+        } else {
+            return next(e)
+        }
+    }
+}
+
+const addFollowed = async (req, res, next) => {
+    try {
+        const {followerID, followingID} = FollowPayload.parse(req.body);
+        await UserModel.addFollower({
+            followerID, followingID
+        })
+        return res.status(200).send()
+    } catch (e) {
+        if (e instanceof ZodError) {
+            return res.status(422).send({
+                error: e.message
+            })
+        } else {
+            next(e)
+        }
+    }
+}
+
+const removeFollowing = async (req, res, next) => {
+    try {
+
+    } catch (e) {
+
+    }
+}
+
+const removeFollowed = async (req, res, next) => {
+    try {
+
+    } catch (e) {
+
+    }
+}
+
 export default {
     index,
     store,
     show,
     remove,
     update,
-    userById
+    userPhoto,
+    userById,
+    addFollowing,
+    addFollowed,
 }

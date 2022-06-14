@@ -1,3 +1,5 @@
+import {ZodError} from "zod";
+
 const getUniqueErrorMessage = (err) => {
     let output;
     try {
@@ -7,6 +9,18 @@ const getUniqueErrorMessage = (err) => {
         output = 'Unique field already exists';
     }
     return output;
+}
+
+const processZodError = (error: ZodError) => {
+    const errorObject = {
+        errors: []
+    };
+
+    error.issues.forEach(issue => {
+        errorObject.errors.push(`${issue.path[0]} ${issue.message}`)
+    })
+
+    return errorObject;
 }
 
 const getErrorMessage = (err) => {
@@ -31,6 +45,10 @@ const getErrorMessage = (err) => {
 }
 
 export class ValidationError extends Error {
+    errors: {
+        [idx: string]: string
+    };
+
     constructor(errors) {
         super();
         this.errors = errors;
@@ -43,4 +61,5 @@ export class AuthenticationError extends Error {
     }
 }
 
-export default {getErrorMessage}
+
+export default {getErrorMessage, processZodError}

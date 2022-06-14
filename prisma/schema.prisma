@@ -25,6 +25,10 @@ model User {
   salt            String
   updatedAt       DateTime    @updatedAt @db.Date
   about String?
+  followers User[] @relation("UserFollows", fields:[followersIDs], references: [id])
+  followersIDs String[] @db.ObjectId
+  following User[] @relation("UserFollows", fields:[followingIDs], references: [id])
+  followingIDs String[] @db.ObjectId
 
   @@map("users")
 }

@@ -15,6 +15,10 @@ userRouter.route('/api/users/:userId')
     .put(authController.requireSignIn, authController.hasAuthorization, upload.single('picture'), userController.update)
     .delete(authController.requireSignIn, authController.hasAuthorization, userController.remove)
 
+userRouter.get('/api/users/photo/:userId', authController.requireSignIn, userController.userPhoto)
+
+userRouter.post('/api/users/follow', userController.addFollowing, userController.addFollowed)
+
 userRouter.param('userId', userController.userById);
 
 export default userRouter;
