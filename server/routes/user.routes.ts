@@ -17,7 +17,8 @@ userRouter.route('/api/users/:userId')
 
 userRouter.get('/api/users/photo/:userId', authController.requireSignIn, userController.userPhoto)
 
-userRouter.post('/api/users/follow', userController.addFollowing, userController.addFollowed)
+userRouter.put('/api/users/follow', userController.addFollowing, userController.addFollowed)
+userRouter.put('/api/users/unfollow', userController.removeFollowing, userController.removeFollowed)
 
 userRouter.param('userId', userController.userById);
 

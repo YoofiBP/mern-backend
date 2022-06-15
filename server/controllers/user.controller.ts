@@ -135,17 +135,39 @@ const addFollowed = async (req, res, next) => {
 
 const removeFollowing = async (req, res, next) => {
     try {
-
+        const {followerID, followingID} = FollowPayload.parse(req.body);
+        await UserModel.removeFollowing({
+            followerID,
+            followingID
+        });
+        return next()
     } catch (e) {
-
+        if (e instanceof ZodError) {
+            return res.status(422).send({
+                error: e.message
+            })
+        } else {
+            next(e)
+        }
     }
 }
 
-const removeFollowed = async (req, res, next) => {
+const removeFollower = async (req, res, next) => {
     try {
-
+        const {followerID, followingID} = FollowPayload.parse(req.body);
+        await UserModel.removeFollowed({
+            followerID,
+            followingID
+        });
+        res.status(200).send()
     } catch (e) {
-
+        if (e instanceof ZodError) {
+            return res.status(422).send({
+                error: e.message
+            })
+        } else {
+            next(e)
+        }
     }
 }
 
@@ -159,4 +181,7 @@ export default {
     userById,
     addFollowing,
     addFollowed,
+    removeFollowing,
+    removeFollowed: removeFollower
+
 }

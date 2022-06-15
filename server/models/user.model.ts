@@ -4,7 +4,6 @@ import contains from 'validator/lib/contains';
 import {PrismaClient} from '@prisma/client'
 import prisma from '../prisma/prisma';
 import {AuthenticationError, ValidationError} from "../helpers/dbErrorHandler";
-import async from "async";
 import {z} from "zod";
 import {FollowPayload} from "../helpers/schemas/user.schema";
 
@@ -230,7 +229,67 @@ const addFollower = (prisma: PrismaClient["user"]) => async ({
     })
 }
 
-const removeFollowing = (prisma) => async()
+const removeFollower = (prisma: PrismaClient["user"]) =>
+    async ({
+               followerID, followingID
+           }: z.infer<typeof FollowPayload>) => {
+        const users = await prisma.findMany({
+            where: {
+                id: {in: [followerID, followingID]}
+            }
+        })
+
+        const [follower, following] = users;
+        if (!follower || !following) {
+            throw Error('Invalid users')
+        }
+
+        const newFollowersList = following.followersIDs.filter((userID) => userID != follower.id)
+
+        await prisma.update({
+            where: {
+                id: following.id
+            },
+            data: {
+                followersIDs: {
+                    set: newFollowersList
+                }
+            }
+        })
+
+
+    };
+
+const removeFollowing = (prisma: PrismaClient["user"]) =>
+    async ({
+               followerID, followingID
+           }: z.infer<typeof FollowPayload>) => {
+        const users = await prisma.findMany({
+            where: {
+                id: {in: [followerID, followingID]}
+            }
+        })
+
+        const [follower, following] = users;
+        if (!follower || !following) {
+            throw Error('Invalid users')
+        }
+
+        const newFollowingList = follower.followingIDs.filter((userID) => userID != following.id)
+
+        await prisma.update({
+            where: {
+                id: follower.id
+            },
+            data: {
+                followingIDs: {
+                    set: newFollowingList
+                }
+            }
+        })
+
+
+    };
 
 function Users(prisma: PrismaClient['user']) {
     return Object.assign(prisma, {
@@ -240,7 +299,9 @@ function Users(prisma: PrismaClient['user']) {
         deleteUserById: deleteUserById(prisma),
         updateUser: updateUser(prisma),
         addFollowing: addFollowing(prisma),
-        addFollower: addFollower(prisma)
+        addFollower: addFollower(prisma),
+        removeFollowing: removeFollowing(prisma),
+        removeFollowed: removeFollower(prisma)
     })
 }
 
