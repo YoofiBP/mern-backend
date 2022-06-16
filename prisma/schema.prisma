@@ -1,7 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-//  binaryTargets = ["native", "linux-musl"]
-
 }
 
 datasource db {
@@ -9,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-type UsersImage {
+type Image {
   contentType String
   data        Bytes
 }
@@ -20,7 +18,7 @@ model User {
   createdAt       DateTime    @default(now()) @db.Date
   email           String      @unique
   password        String
-  image           UsersImage?
+  image           Image?
   name            String
   salt            String
   updatedAt       DateTime    @updatedAt @db.Date
@@ -29,6 +27,36 @@ model User {
   followersIDs String[] @db.ObjectId
   following User[] @relation("UserFollows", fields:[followingIDs], references: [id])
   followingIDs String[] @db.ObjectId
+  posts Post[]
+  comments Comment[]
+  postsLiked Post[] @relation("UserLikes", fields:[postsLikedIDs], references: [id])
+  postsLikedIDs String[] @db.ObjectId
 
   @@map("users")
 }
+
+model Post {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+    v               Int         @map("__v") @default(0)
+    content String
+    photo Image?
+    user User @relation(fields: [postedBy], references: [id])
+    postedBy String @db.ObjectId
+    createdAt       DateTime    @default(now()) @db.Date
+    updatedAt       DateTime    @updatedAt @db.Date
+    comments Comment[]
+        likers User[] @relation("UserLikes", fields:[likeIDs], references: [id])
+        likeIDs String[] @db.ObjectId
+}
+
+
+model Comment {
+    id String @id @default(auto()) @map("_id") @db.ObjectId
+    v               Int         @map("__v") @default(0)
+    post Post @relation(fields:[postId], references: [id])
+    postId String @db.ObjectId
+    user User @relation(fields:[commenter], references: [id])
+    commenter String @db.ObjectId
+    createdAt       DateTime    @default(now()) @db.Date
+}
+
