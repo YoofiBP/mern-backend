@@ -203,31 +203,32 @@ const addFollowing = (prisma: PrismaClient["user"]) =>
         })
     }
 
-const addFollower = (prisma: PrismaClient["user"]) => async ({
-                                                                 followerID,
-                                                                 followingID
-                                                             }: z.infer<typeof FollowPayload>) => {
-    const users = await prisma.findMany({
-        where: {
-            id: {in: [followerID, followingID]}
-        }
-    })
-
-    const [follower, following] = users;
-    if (!follower || !following) {
-        throw Error('Invalid users')
-    }
-    await prisma.update({
-        where: {
-            id: following.id
-        },
-        data: {
-            followersIDs: {
-                push: follower.id
+const addFollower = (prisma: PrismaClient["user"]) =>
+    async ({
+               followerID,
+               followingID
+           }: z.infer<typeof FollowPayload>) => {
+        const users = await prisma.findMany({
+            where: {
+                id: {in: [followerID, followingID]}
             }
+        })
+
+        const [follower, following] = users;
+        if (!follower || !following) {
+            throw Error('Invalid users')
         }
-    })
-}
+        await prisma.update({
+            where: {
+                id: following.id
+            },
+            data: {
+                followersIDs: {
+                    push: follower.id
+                }
+            }
+        })
+    }
 
 const removeFollower = (prisma: PrismaClient["user"]) =>
     async ({
@@ -291,6 +292,22 @@ const removeFollowing = (prisma: PrismaClient["user"]) =>
 
     };
 
+const findUnfollowed = (prisma: PrismaClient["user"]) =>
+    async (user) => {
+        const usersFollowing = user.followingIDs;
+        return await prisma.findMany({
+            where: {
+                id: {notIn: [...usersFollowing, user.id]}
+            },
+            select: {
+                name: true,
+                id: true,
+                email: true
+            }
+        })
+
+    }
+
 function Users(prisma: PrismaClient['user']) {
     return Object.assign(prisma, {
         authenticate,
@@ -301,7 +318,8 @@ function Users(prisma: PrismaClient['user']) {
         addFollowing: addFollowing(prisma),
         addFollower: addFollower(prisma),
         removeFollowing: removeFollowing(prisma),
-        removeFollowed: removeFollower(prisma)
+        removeFollowed: removeFollower(prisma),
+        findUnfollowed: findUnfollowed(prisma),
     })
 }
 

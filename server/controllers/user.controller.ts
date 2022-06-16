@@ -39,6 +39,7 @@ const show = async (req, res) => {
         })
     }
 };
+
 const remove = async (req, res) => {
     try {
         await UserModel.deleteUserById(req.user.id);
@@ -52,6 +53,7 @@ const remove = async (req, res) => {
         })
     }
 };
+
 const update = async (req, res) => {
     try {
         const updatedUser = await UserModel.updateUser(req.user.id, req.body, req.file);
@@ -171,6 +173,17 @@ const removeFollower = async (req, res, next) => {
     }
 }
 
+const findPeopleToFollow = async (req, res) => {
+    try {
+        const unfollowedUsers = await UserModel.findUnfollowed(req.user);
+        res.status(200).send({
+            users: unfollowedUsers
+        })
+    } catch (e) {
+        console.log(e)
+    }
+}
+
 export default {
     index,
     store,
@@ -182,6 +195,7 @@ export default {
     addFollowing,
     addFollowed,
     removeFollowing,
-    removeFollowed: removeFollower
+    removeFollowed: removeFollower,
+    findPeopleToFollow
 
 }
