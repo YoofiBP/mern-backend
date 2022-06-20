@@ -1,7 +1,7 @@
 import * as z from "zod"
-import { CompleteImage, RelatedImageModel, CompletePost, RelatedPostModel, CompleteComment, RelatedCommentModel } from "./index"
+import { CompleteImage, RelatedImageSchema, CompletePost, RelatedPostSchema, CompleteComment, RelatedCommentSchema } from "./index"
 
-export const UserModel = z.object({
+export const UserSchema = z.object({
   id: z.string(),
   v: z.number().int(),
   createdAt: z.date(),
@@ -16,7 +16,7 @@ export const UserModel = z.object({
   postsLikedIDs: z.string().array(),
 })
 
-export interface CompleteUser extends z.infer<typeof UserModel> {
+export interface CompleteUser extends z.infer<typeof UserSchema> {
   image?: CompleteImage | null
   followers: CompleteUser[]
   following: CompleteUser[]
@@ -26,15 +26,15 @@ export interface CompleteUser extends z.infer<typeof UserModel> {
 }
 
 /**
- * RelatedUserModel contains all relations on your model in addition to the scalars
+ * RelatedUserSchema contains all relations on your model in addition to the scalars
  *
  * NOTE: Lazy required in case of potential circular dependencies within schema
  */
-export const RelatedUserModel: z.ZodSchema<CompleteUser> = z.lazy(() => UserModel.extend({
-  image: RelatedImageModel.nullish(),
-  followers: RelatedUserModel.array(),
-  following: RelatedUserModel.array(),
-  posts: RelatedPostModel.array(),
-  comments: RelatedCommentModel.array(),
-  postsLiked: RelatedPostModel.array(),
+export const RelatedUserSchema: z.ZodSchema<CompleteUser> = z.lazy(() => UserSchema.extend({
+  image: RelatedImageSchema.nullish(),
+  followers: RelatedUserSchema.array(),
+  following: RelatedUserSchema.array(),
+  posts: RelatedPostSchema.array(),
+  comments: RelatedCommentSchema.array(),
+  postsLiked: RelatedPostSchema.array(),
 }))

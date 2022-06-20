@@ -1,7 +1,7 @@
 import prisma from "../prisma/prisma";
 import {PrismaClient} from "@prisma/client";
 import {z} from "zod";
-import {PostData} from "../helpers/schemas/post.schema";
+import {PostSchema} from "../../prisma/zod";
 import {ValidationError} from "../helpers/dbErrorHandler";
 
 class Post {
@@ -15,7 +15,7 @@ class Post {
         return await this.postModel.findMany();
     }
 
-    createPost = async ({content, postedBy}: z.infer<typeof PostData>) => {
+    createPost = async ({content, postedBy}: z.infer<typeof PostSchema>) => {
         if (content.length < 1) {
             throw new ValidationError({
                 content: 'Content required'

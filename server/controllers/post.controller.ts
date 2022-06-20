@@ -1,5 +1,5 @@
 import PostModel from '../models/post.model';
-import {PostData} from "../helpers/schemas/post.schema";
+import {PostSchema} from "../../prisma/zod";
 import {ValidationError} from "../helpers/dbErrorHandler";
 import {ZodError} from "zod";
 import dbErrorHandler from "../helpers/dbErrorHandler";
@@ -17,7 +17,10 @@ const list = async (req, res, next) => {
 
 const store = async (req, res, next) => {
     try {
-        const {content, postedBy} = PostData.parse(req.body)
+        const {content, postedBy} = PostSchema.pick({
+            content: true,
+            postedBy: true,
+        }).parse(req.body)
         await PostModel.createPost({content, postedBy});
         return res.status(200).json()
     } catch (e) {

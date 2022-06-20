@@ -8,10 +8,9 @@ generator zod {
 
   relationModel            = true
 
-
   modelCase                = "PascalCase"
 
-  modelSuffix              = "Model"
+  modelSuffix              = "Schema"
 
   useDecimalJs             = true
 
