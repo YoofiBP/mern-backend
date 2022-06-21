@@ -1,8 +1,10 @@
 import PostModel from '../models/post.model';
-import {PostSchema} from "../../prisma/zod";
+import CommentModel from '../models/comment.model';
+import {CommentSchema, PostSchema} from "../../prisma/zod";
 import {ValidationError} from "../helpers/dbErrorHandler";
 import {ZodError, z} from "zod";
 import dbErrorHandler from "../helpers/dbErrorHandler";
+import {CommentPayload, LikePayload} from "../helpers/schemas/post.schema";
 
 
 const list = async (req, res, next) => {
@@ -74,6 +76,66 @@ const postById = async (req, res, next, id) => {
     }
 }
 
+const likePost = async (req, res, next) => {
+    try {
+        const {postID, userID} = LikePayload.parse(req.body);
+        await PostModel.likePost({
+            postID,
+            userID
+        })
+        return res.status(200).send()
+    } catch (e) {
+        next(e)
+    }
+}
+
+const unLikePost = async (req, res, next) => {
+    try {
+        const {postID, userID} = LikePayload.parse(req.body);
+        await PostModel.unLikePost({
+            postID,
+            userID
+        })
+        return res.status(200).send()
+    } catch (e) {
+        next(e)
+    }
+}
+
+const commentOnPost = async (req, res, next) => {
+    try {
+        const {postID, userID, text} = CommentPayload.parse(req.body);
+        const comment = await CommentModel.createPostComment({
+            postID,
+            userID,
+            text
+        })
+        return res.status(200).json(comment)
+    } catch (e) {
+        next(e)
+    }
+}
+
+const deleteComment = async (req, res, next) => {
+    try {
+        const {id} = CommentSchema.pick({
+            id: true
+        }).parse(req.body)
+        await CommentModel.deleteComment(id)
+        return res.status(200).send();
+    } catch (e) {
+        next(e)
+    }
+}
+
+const listComments = async (req, res, next) => {
+    try {
+        const {comments} = await PostModel.getComments(req.post.id);
+        res.status(200).json(comments);
+    } catch (e) {
+        next(e)
+    }
+}
 
 export default {
     list,
@@ -81,5 +143,10 @@ export default {
     userFeed,
     postsByUser,
     postById,
-    deletePost
+    deletePost,
+    likePost,
+    unLikePost,
+    commentOnPost,
+    deleteComment,
+    listComments
 }

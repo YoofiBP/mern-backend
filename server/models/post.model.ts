@@ -4,6 +4,7 @@ import {z} from "zod";
 import {PostSchema, UserSchema} from "../../prisma/zod";
 import {ValidationError} from "../helpers/dbErrorHandler";
 import UserModel from "./user.model";
+import {LikePayload} from "../helpers/schemas/post.schema";
 
 class Post {
     private postModel: PrismaClient['post'];
@@ -62,6 +63,40 @@ class Post {
         })
     }
 
+    likePost = async ({postID, userID}: z.infer<typeof LikePayload>) => {
+        await this.postModel.update({
+                where: {
+                    id: postID
+                },
+                data: {
+                    likeIDs: {
+                        push: userID
+                    }
+                }
+            }
+        )
+    }
+
+    unLikePost = async ({postID, userID}: z.infer<typeof LikePayload>) => {
+        const post = await this.postModel.findUnique({
+            where: {
+                id: postID
+            }
+        })
+        const newLikeIDs = post.likeIDs.filter(id => id !== userID)
+        await this.postModel.update({
+                where: {
+                    id: postID
+                },
+                data: {
+                    likeIDs: {
+                        set: newLikeIDs
+                    }
+                }
+            }
+        )
+    }
+
     createPost = async ({content, postedBy}: z.infer<typeof PostSchema>) => {
         if (content.length < 1) {
             throw new ValidationError({
@@ -82,6 +117,18 @@ class Post {
             }
         })
     }
+
+    getComments = async (postID: z.infer<typeof PostSchema>['id']) => {
+        return await this.postModel.findUnique({
+            where: {
+                id: postID
+            },
+            select: {
+                comments: true
+            }
+        })
+    }
 }
+
 
 export default new Post(prisma.post);

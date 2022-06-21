@@ -1,6 +1,7 @@
 import {ValidationError} from "../helpers/dbErrorHandler";
 
 const handleError = async (err, req, res, _) => {
+    console.log(err);
     if (err instanceof ValidationError) {
         return res.status(422).send(err.errors)
     }
