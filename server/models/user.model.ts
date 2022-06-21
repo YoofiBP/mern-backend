@@ -6,6 +6,7 @@ import prisma from '../prisma/prisma';
 import {AuthenticationError, ValidationError} from "../helpers/dbErrorHandler";
 import {z} from "zod";
 import {FollowPayload} from "../helpers/schemas/user.schema";
+import {UserSchema} from "../../prisma/zod";
 
 const excludeFields = (user) => {
     const protectedFields = ['password', 'salt'];
@@ -15,6 +16,20 @@ const excludeFields = (user) => {
     }
 
     return user;
+}
+
+const findFollowing = (prisma: PrismaClient['user']) => async (userID: z.infer<typeof UserSchema>['id']) => {
+    const {followingIDs} = await prisma.findUnique({
+        where: {
+            id: userID
+        },
+        select: {
+            followingIDs: true
+        },
+        rejectOnNotFound: true
+    })
+
+    return followingIDs;
 }
 
 const encryptPassword = (password, salt) => {
@@ -29,7 +44,8 @@ const authenticate = async ({email, password}) => {
     const user = await prisma.user.findUnique({
         where: {
             email
-        }
+        },
+        rejectOnNotFound: true
     })
 
     if (!user) {
@@ -139,7 +155,8 @@ const getUser = (prisma) => async (id) => {
         include: {
             followers: true,
             following: true
-        }
+        },
+        rejectOnNotFound: true
     })
 
     return excludeFields(user);
@@ -308,6 +325,7 @@ const findUnfollowed = (prisma: PrismaClient["user"]) =>
 
     }
 
+
 function Users(prisma: PrismaClient['user']) {
     return Object.assign(prisma, {
         authenticate,
@@ -320,6 +338,7 @@ function Users(prisma: PrismaClient['user']) {
         removeFollowing: removeFollowing(prisma),
         removeFollowed: removeFollower(prisma),
         findUnfollowed: findUnfollowed(prisma),
+        findFollowing: findFollowing(prisma)
     })
 }
 
