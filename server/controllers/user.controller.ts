@@ -184,6 +184,7 @@ const findPeopleToFollow = async (req, res) => {
     }
 }
 
+
 export default {
     index,
     store,
@@ -197,5 +198,4 @@ export default {
     removeFollowing,
     removeFollowed: removeFollower,
     findPeopleToFollow
-
 }
