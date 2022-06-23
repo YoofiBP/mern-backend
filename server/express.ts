@@ -12,7 +12,7 @@ import postRouter from "./routes/post.routes";
 
 const app = express();
 
-
+//TODO: Try out caching
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());

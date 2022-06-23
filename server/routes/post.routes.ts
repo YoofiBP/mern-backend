@@ -26,7 +26,7 @@ postRouter.route('/api/posts/:postId')
 postRouter.route('/api/posts/:postId/comments')
     .get(postController.listComments)
 
-
+//TODO: Implement filtering, sorting and pagination
 postRouter.route('/api/posts/by/:userId').get(postController.postsByUser)
 
 postRouter.param('userId', userController.userById);
